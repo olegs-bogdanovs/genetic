@@ -6,8 +6,9 @@ import java.util.*;
 public class App {
     private int GENERATION = 0;
     private ChessBoard chessBoard;
-    private final int ENTITY_COUNT = 100;
-    private final double MUTATION_PROP = 0.01;
+    private final int ENTITY_COUNT = 400;
+    private final double MUTATION_PROP = 0.1;
+    private boolean isFounded = false;
     private Map<Pawn, Integer> pawnIdMap = new HashMap<>();
     private Map<Integer, Pawn> idPawnMap = new HashMap<>();
     private List<List<Integer>> entities = new ArrayList<>();
@@ -36,18 +37,21 @@ public class App {
             queen = queen.beatPawn(idPawnMap.get(integer));
             if (queen.getMoves() == 1) res++;
         }
-        //if (res == entity.size()) System.out.println("GENERATION: " + GENERATION + " ENT->" + entity);
+        if (res == entity.size()) {
+            isFounded = true;
+            System.out.println(entity + " GEN: " + GENERATION);
+        }
         return res;
     }
 
-    private void crossover(){
+    private void crossover() {
         List<List<Integer>> ent = new ArrayList<>();
         ent.addAll(this.entities);
         Collections.shuffle(ent);
 
-        for (int i = 0; i < ent.size(); i = i + 2){
+        for (int i = 0; i < ent.size(); i = i + 2) {
             List<Integer> ent1 = new ArrayList<>(ent.get(i));
-            List<Integer> ent2 = new ArrayList<>(ent.get(i+1));
+            List<Integer> ent2 = new ArrayList<>(ent.get(i + 1));
 
             int genomPosition = this.random.nextInt(ent1.size());
             Integer ent1GenValue = ent1.get(genomPosition);
@@ -58,6 +62,50 @@ public class App {
 
             ent1.set(genomPosition, ent2GenValue);
             ent2.set(genomPosition, ent1GenValue);
+
+            this.entities.add(ent1);
+            this.entities.add(ent2);
+        }
+    }
+
+    private void normalizeEntity(List<Integer> entity) {
+        List<Integer> unusedEntries = new ArrayList<>(this.entities.get(0));
+        Set<Integer> usedEntries = new HashSet<>(entity);
+        unusedEntries.removeAll(usedEntries);
+
+        for(int i = 0; i < entity.size(); i++){
+            if (usedEntries.contains(entity.get(i))){
+                entity.set(i, entity.get(i));
+                usedEntries.remove(entity.get(i));
+            } else {
+                Integer e = unusedEntries.get(0);
+                entity.set(i, e);
+                unusedEntries.remove(e);
+            }
+        }
+
+    }
+
+    private void crossover2() {
+        List<List<Integer>> ent = new ArrayList<>();
+        ent.addAll(this.entities);
+        Collections.shuffle(ent);
+
+        for (int i = 0; i < ent.size(); i = i + 2) {
+            List<Integer> ent1 = new ArrayList<>(ent.get(i));
+            List<Integer> ent2 = new ArrayList<>(ent.get(i + 1));
+
+            int border = this.random.nextInt(ent1.size());
+
+            for (int j = 0; j < border; j++) {
+                int temp;
+                temp = ent1.get(j);
+                ent1.set(j, ent2.get(j));
+                ent2.set(j, temp);
+            }
+
+            normalizeEntity(ent1);
+            normalizeEntity(ent2);
 
             this.entities.add(ent1);
             this.entities.add(ent2);
@@ -82,7 +130,7 @@ public class App {
                 Collections.reverse(subList);
 
                 List<Integer> newEntity = new ArrayList<>();
-                for (int i=0; i < entity.size(); i++) {
+                for (int i = 0; i < entity.size(); i++) {
                     if (i < intervalStart || i >= intervalEnd) {
                         newEntity.add(entity.get(i));
                     } else {
@@ -98,6 +146,14 @@ public class App {
         this.entities.addAll(newPopulation);
     }
 
+    private void mutation2() {
+        for (List<Integer> entity : this.entities) {
+            if (this.random.nextDouble() < MUTATION_PROP) {
+                Collections.shuffle(entity);
+            }
+        }
+    }
+
     private void selection() {
         List<Pair<Integer, List<Integer>>> ents = new ArrayList<>();
         int sum = 0;
@@ -110,7 +166,7 @@ public class App {
         List<Pair<Double, List<Integer>>> ents2 = new ArrayList<>();
 
         double prevValue = 0.0;
-        for (Pair<Integer, List<Integer>> entity: ents) {
+        for (Pair<Integer, List<Integer>> entity : ents) {
             prevValue += entity.getKey() * 1.0 / sum;
             ents2.add(Pair.of(prevValue, entity.getValue()));
         }
@@ -136,15 +192,15 @@ public class App {
     public App(ChessBoard chessBoard) {
         this.chessBoard = chessBoard;
         generatePopulations();
-        for (int i = 0; i < 100; i++) {
-            crossover();
+
+
+        while (!isFounded) {
+            crossover2();
             mutation();
             selection();
-            GENERATION ++;
+            GENERATION++;
         }
 
-        this.entities.forEach(entity -> {
-            System.out.println(entity + " -> " + fitnessFunction(entity));
-        });
+
     }
 }
