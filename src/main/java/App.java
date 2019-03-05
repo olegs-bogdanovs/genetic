@@ -112,9 +112,9 @@ public class App {
         this.chessBoard = chessBoard;
         generatePopulations();
 
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 200; i++) {
             crossover();
-            mutation();
+           // mutation();
             selection();
             GENERATION++;
         }
