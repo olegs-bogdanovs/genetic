@@ -23,8 +23,8 @@ public class Main {
 
         ChessBoard chessBoard = new ChessBoard(new Queen(0,0), pawns);
 
-        while(true) {
+        //while(true) {
             new App(chessBoard);
-        }
+        //}
     }
 }
