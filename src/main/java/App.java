@@ -7,7 +7,7 @@ public class App {
     private int GENERATION = 0;
     private ChessBoard chessBoard;
     private final int ENTITY_COUNT = 100;
-    private final double MUTATION_PROP = 0.001;
+    private final double MUTATION_PROP = 0.01;
     private boolean isFounded = false;
     private Map<Pawn, Integer> pawnIdMap = new HashMap<>();
     private Map<Integer, Pawn> idPawnMap = new HashMap<>();
@@ -107,28 +107,45 @@ public class App {
         this.entities.addAll(newPopulation);
     }
 
+    private void selection2() {
+
+        List<Entity> newPopulation = new ArrayList<>();
+
+        for (int i = 0; i < this.entities.size(); i = i + 2) {
+            if (fitnessFunction(this.entities.get(i)) > fitnessFunction(this.entities.get(i+1))){
+                newPopulation.add(this.entities.get(i));
+            } else {
+                newPopulation.add(this.entities.get(i+1));
+            }
+        }
+
+        this.entities.clear();
+        this.entities.addAll(newPopulation);
+    }
+
 
     public App(ChessBoard chessBoard) {
         this.chessBoard = chessBoard;
         generatePopulations();
 
-        for (int i = 0; i < 200; i++) {
+//        for (int i = 0; i < 1000; i++) {
+//            crossover();
+//            mutation();
+//            selection2();
+//            this.entities.forEach(Entity::increaseGeneration);
+//            GENERATION++;
+//        }
+//
+//        for (Entity entity : this.entities) {
+//            System.out.println(entity + " " + fitnessFunction(entity));
+//        }
+
+        while (!isFounded) {
             crossover();
-           // mutation();
+            mutation();
             selection();
             GENERATION++;
         }
-
-        for (Entity entity : this.entities) {
-            System.out.println(entity + " " + fitnessFunction(entity));
-        }
-
-//        while (!isFounded) {
-//            crossover();
-//            mutation();
-//            selection();
-//            GENERATION++;
-//        }
 
 
     }
