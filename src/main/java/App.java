@@ -6,8 +6,8 @@ import java.util.*;
 public class App {
     private int GENERATION = 0;
     private ChessBoard chessBoard;
-    private final int ENTITY_COUNT = 400;
-    private final double MUTATION_PROP = 0.1;
+    private final int ENTITY_COUNT = 600;
+    private final double MUTATION_PROP = 0.05;
     private boolean isFounded = false;
     private Map<Pawn, Integer> pawnIdMap = new HashMap<>();
     private Map<Integer, Pawn> idPawnMap = new HashMap<>();
@@ -95,11 +95,17 @@ public class App {
             List<Integer> ent1 = new ArrayList<>(ent.get(i));
             List<Integer> ent2 = new ArrayList<>(ent.get(i + 1));
 
-            int border = this.random.nextInt(ent1.size());
+            int startInterval = this.random.nextInt(ent1.size());
+            int endIntercal = this.random.nextInt(ent1.size());
 
-            for (int j = 0; j < border; j++) {
-                int temp;
-                temp = ent1.get(j);
+            if (endIntercal < startInterval) {
+                int temp = startInterval;
+                startInterval = endIntercal;
+                endIntercal = temp;
+            }
+
+            for (int j = startInterval; j < endIntercal; j++) {
+                int temp = ent1.get(j);
                 ent1.set(j, ent2.get(j));
                 ent2.set(j, temp);
             }
@@ -149,7 +155,13 @@ public class App {
     private void mutation2() {
         for (List<Integer> entity : this.entities) {
             if (this.random.nextDouble() < MUTATION_PROP) {
-                Collections.shuffle(entity);
+                int intervalStart = random.nextInt(entity.size());
+                int intervalEnd = random.nextInt(entity.size());
+                int temp;
+
+                temp = entity.get(intervalStart);
+                entity.set(intervalStart, entity.get(intervalEnd));
+                entity.set(intervalEnd, temp);
             }
         }
     }
