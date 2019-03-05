@@ -5,9 +5,9 @@ import java.util.Set;
 
 public class ChessBoard {
     private Queen queen;
-    private Set<Pawn> pawns = new HashSet<>();
+    private List<Pawn> pawns;
 
-    public ChessBoard(Queen queen, Set<Pawn> pawns) {
+    public ChessBoard(Queen queen, List<Pawn> pawns) {
         this.queen = queen;
         this.pawns = pawns;
     }

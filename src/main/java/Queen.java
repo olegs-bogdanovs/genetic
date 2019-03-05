@@ -15,16 +15,15 @@ public class Queen {
     }
 
     public Queen beatPawn(Pawn pawn) {
-        int deltaX = this.positionX - pawn.getPositionX();
+        int deltaX = Math.abs(this.positionX - pawn.getPositionX());
+        int deltaY = Math.abs(this.positionY - pawn.getPositionY());
 
         if (this.positionX == pawn.getPositionX()
                 || this.positionY == pawn.getPositionY()
-                || this.positionY == pawn.getPositionY() + deltaX
-                || this.positionY == pawn.getPositionY() - deltaX
-                ) {
-            return new Queen(pawn.getPositionX(), pawn.getPositionY(), this.moves + 1);
+                || deltaX == deltaY) {
+            return new Queen(pawn.getPositionX(), pawn.getPositionY(), 1);
         } else {
-            return new Queen(pawn.getPositionX(), pawn.getPositionY(), this.moves + 2);
+            return new Queen(pawn.getPositionX(), pawn.getPositionY(), 2);
         }
     }
 
