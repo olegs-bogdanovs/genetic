@@ -6,12 +6,12 @@ import java.util.*;
 public class App {
     private int GENERATION = 0;
     private ChessBoard chessBoard;
-    private final int ENTITY_COUNT = 600;
-    private final double MUTATION_PROP = 0.05;
+    private final int ENTITY_COUNT = 100;
+    private final double MUTATION_PROP = 0.01;
     private boolean isFounded = false;
     private Map<Pawn, Integer> pawnIdMap = new HashMap<>();
     private Map<Integer, Pawn> idPawnMap = new HashMap<>();
-    private List<List<Integer>> entities = new ArrayList<>();
+    private List<Entity> entities = new ArrayList<>();
     private Random random = new Random();
 
 
@@ -23,21 +23,21 @@ public class App {
         }
 
         for (int i = 0; i < ENTITY_COUNT; i++) {
-            List<Integer> entity = new ArrayList<>(idPawnMap.keySet());
-            Collections.shuffle(entity);
-            entities.add(entity);
+            List<Integer> chromosome = new ArrayList<>(idPawnMap.keySet());
+            Collections.shuffle(chromosome);
+            entities.add(new Entity(chromosome));
         }
     }
 
-    private int fitnessFunction(List<Integer> entity) {
+    private int fitnessFunction(Entity entity) {
         Queen queen = this.chessBoard.getQueen();
         int res = 0;
 
-        for (Integer integer : entity) {
+        for (Integer integer : entity.getChromosome()) {
             queen = queen.beatPawn(idPawnMap.get(integer));
             if (queen.getMoves() == 1) res++;
         }
-        if (res == entity.size()) {
+        if (res == entity.getChromosome().size()) {
             isFounded = true;
             System.out.println(entity + " GEN: " + GENERATION);
         }
@@ -45,154 +45,77 @@ public class App {
     }
 
     private void crossover() {
-        List<List<Integer>> ent = new ArrayList<>();
-        ent.addAll(this.entities);
-        Collections.shuffle(ent);
+        Collections.shuffle(this.entities);
+        List<Entity> newEntities = new ArrayList<>();
 
-        for (int i = 0; i < ent.size(); i = i + 2) {
-            List<Integer> ent1 = new ArrayList<>(ent.get(i));
-            List<Integer> ent2 = new ArrayList<>(ent.get(i + 1));
+        for (int i = 0; i < this.entities.size(); i = i + 2) {
+            List<Integer> firstEntPieceOfChromosome = this.entities.get(i).getRandomPieceOfChromosome();
+            List<Integer> secondEntPieceOfChromosome = this.entities.get(i + 1).getRandomPieceOfChromosome();
 
-            int genomPosition = this.random.nextInt(ent1.size());
-            Integer ent1GenValue = ent1.get(genomPosition);
-            Integer ent2GenValue = ent2.get(genomPosition);
+            Entity firstChild = this.entities.get(i).getCopy();
+            Entity secondChild = this.entities.get(i+1).getCopy();
 
-            ent1.set(ent1.indexOf(ent2GenValue), ent1GenValue);
-            ent2.set(ent2.indexOf(ent1GenValue), ent2GenValue);
+            firstChild.insertPieceOfChromosome(secondEntPieceOfChromosome);
+            secondChild.insertPieceOfChromosome(firstEntPieceOfChromosome);
 
-            ent1.set(genomPosition, ent2GenValue);
-            ent2.set(genomPosition, ent1GenValue);
-
-            this.entities.add(ent1);
-            this.entities.add(ent2);
-        }
-    }
-
-    private void normalizeEntity(List<Integer> entity) {
-        List<Integer> unusedEntries = new ArrayList<>(this.entities.get(0));
-        Set<Integer> usedEntries = new HashSet<>(entity);
-        unusedEntries.removeAll(usedEntries);
-
-        for(int i = 0; i < entity.size(); i++){
-            if (usedEntries.contains(entity.get(i))){
-                entity.set(i, entity.get(i));
-                usedEntries.remove(entity.get(i));
-            } else {
-                Integer e = unusedEntries.get(0);
-                entity.set(i, e);
-                unusedEntries.remove(e);
-            }
+            newEntities.add(firstChild);
+            newEntities.add(secondChild);
         }
 
-    }
-
-    private void crossover2() {
-        List<List<Integer>> ent = new ArrayList<>();
-        ent.addAll(this.entities);
-        Collections.shuffle(ent);
-
-        for (int i = 0; i < ent.size(); i = i + 2) {
-            List<Integer> ent1 = new ArrayList<>(ent.get(i));
-            List<Integer> ent2 = new ArrayList<>(ent.get(i + 1));
-
-            int startInterval = this.random.nextInt(ent1.size());
-            int endIntercal = this.random.nextInt(ent1.size());
-
-            if (endIntercal < startInterval) {
-                int temp = startInterval;
-                startInterval = endIntercal;
-                endIntercal = temp;
-            }
-
-            for (int j = startInterval; j < endIntercal; j++) {
-                int temp = ent1.get(j);
-                ent1.set(j, ent2.get(j));
-                ent2.set(j, temp);
-            }
-
-            normalizeEntity(ent1);
-            normalizeEntity(ent2);
-
-            this.entities.add(ent1);
-            this.entities.add(ent2);
-        }
+        this.entities.addAll(newEntities);
     }
 
     private void mutation() {
-        List<List<Integer>> newPopulation = new ArrayList<>();
-        for (List<Integer> entity : this.entities) {
+        for (Entity entity : this.entities) {
             if (this.random.nextDouble() < MUTATION_PROP) {
-                int intervalStart = random.nextInt(entity.size());
-                int intervalEnd = random.nextInt(entity.size());
-                int temp;
-
-                if (intervalStart > intervalEnd) {
-                    temp = intervalEnd;
-                    intervalEnd = intervalStart;
-                    intervalStart = temp;
-                }
-
-                List<Integer> subList = new ArrayList<>(entity.subList(intervalStart, intervalEnd));
-                Collections.reverse(subList);
-
-                List<Integer> newEntity = new ArrayList<>();
-                for (int i = 0; i < entity.size(); i++) {
-                    if (i < intervalStart || i >= intervalEnd) {
-                        newEntity.add(entity.get(i));
-                    } else {
-                        newEntity.add(subList.get(i - intervalStart));
-                    }
-                }
-                newPopulation.add(newEntity);
-            } else {
-                newPopulation.add(entity);
-            }
-        }
-        this.entities.clear();
-        this.entities.addAll(newPopulation);
-    }
-
-    private void mutation2() {
-        for (List<Integer> entity : this.entities) {
-            if (this.random.nextDouble() < MUTATION_PROP) {
-                int intervalStart = random.nextInt(entity.size());
-                int intervalEnd = random.nextInt(entity.size());
-                int temp;
-
-                temp = entity.get(intervalStart);
-                entity.set(intervalStart, entity.get(intervalEnd));
-                entity.set(intervalEnd, temp);
+                entity.mutate();
             }
         }
     }
 
     private void selection() {
-        List<Pair<Integer, List<Integer>>> ents = new ArrayList<>();
+        List<Pair<Integer, Entity>> entsWithFitnessRes = new ArrayList<>();
         int sum = 0;
-        for (List<Integer> entity : this.entities) {
+        for (Entity entity : this.entities) {
             int fitnessRes = fitnessFunction(entity);
             sum += fitnessRes;
-            ents.add(Pair.of(fitnessRes, entity));
+            entsWithFitnessRes.add(Pair.of(fitnessRes, entity));
         }
 
-        List<Pair<Double, List<Integer>>> ents2 = new ArrayList<>();
+        List<Pair<Double, Entity>> roulette = new ArrayList<>();
 
         double prevValue = 0.0;
-        for (Pair<Integer, List<Integer>> entity : ents) {
+        for (Pair<Integer, Entity> entity : entsWithFitnessRes) {
             prevValue += entity.getKey() * 1.0 / sum;
-            ents2.add(Pair.of(prevValue, entity.getValue()));
+            roulette.add(Pair.of(prevValue, entity.getValue()));
         }
 
-        List<List<Integer>> newPopulation = new ArrayList<>();
+        List<Entity> newPopulation = new ArrayList<>();
         for (int i = 0; i < ENTITY_COUNT; i++) {
             double r = this.random.nextDouble();
 
-            for (int j = 0; j < ents2.size(); j++) {
-                Pair<Double, List<Integer>> entity = ents2.get(j);
+            for (int j = 0; j < roulette.size(); j++) {
+                Pair<Double, Entity> entity = roulette.get(j);
                 if (entity.getKey() > r) {
                     newPopulation.add(entity.getValue());
                     break;
                 }
+            }
+        }
+
+        this.entities.clear();
+        this.entities.addAll(newPopulation);
+    }
+
+    private void selection2() {
+
+        List<Entity> newPopulation = new ArrayList<>();
+
+        for (int i = 0; i < this.entities.size(); i = i + 2) {
+            if (fitnessFunction(this.entities.get(i)) > fitnessFunction(this.entities.get(i+1))){
+                newPopulation.add(this.entities.get(i));
+            } else {
+                newPopulation.add(this.entities.get(i+1));
             }
         }
 
@@ -205,9 +128,20 @@ public class App {
         this.chessBoard = chessBoard;
         generatePopulations();
 
+//        for (int i = 0; i < 1000; i++) {
+//            crossover();
+//            mutation();
+//            selection2();
+//            this.entities.forEach(Entity::increaseGeneration);
+//            GENERATION++;
+//        }
+//
+//        for (Entity entity : this.entities) {
+//            System.out.println(entity + " " + fitnessFunction(entity));
+//        }
 
         while (!isFounded) {
-            crossover2();
+            crossover();
             mutation();
             selection();
             GENERATION++;
